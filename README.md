@@ -20,8 +20,8 @@ Ensure you have [Docker](https://www.docker.com/) and Docker Compose installed o
 
 **1. Clone the repository:**
 ```bash
-git clone <your-repository-url>
-cd <repository-folder-name>
+git clone https://github.com/rishi-shukla/task-management-microservices.git
+cd task-management-microservices
 2. Make the startup script executable (Mac/Linux users):
 
 Bash
