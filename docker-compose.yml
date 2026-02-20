@@ -1,0 +1,68 @@
+services:
+  mysql:
+    image: mysql:8.0
+    platform: linux/amd64
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  identity-service:
+    build: ./identity-service
+    container_name: identity-service
+    restart: always
+    environment:
+      - DB_HOST=mysql
+      - DB_NAME=auth_db
+      - DB_USER=root
+      - DB_PASS=root
+      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mysql
+
+  task-service:
+    build: ./task-service
+    container_name: task-service
+    restart: always
+    environment:
+      - DB_HOST=mysql
+      - DB_NAME=task_db
+      - DB_USER=root
+      - DB_PASS=root
+      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    ports:
+      - "8082:8082"
+    depends_on:
+      - mysql
+      - identity-service
+
+  gateway-service:
+    build: ./gateway-service
+    container_name: gateway-service
+    environment:
+      - IDENTITY_SERVICE_URL=http://identity-service:8081
+      - TASK_SERVICE_URL=http://task-service:8082
+    ports:
+      - "8080:8080"
+    depends_on:
+      - identity-service
+      - task-service
+
+  # NEW: Containerized Frontend Service
+  frontend:
+    build: ./frontend
+    container_name: task-manager-ui
+    ports:
+      - "5173:80" # Maps browser port 5173 to Nginx port 80 inside the container
+    depends_on:
+      - gateway-service # Frontend depends on the Gateway to route requests
+    restart: always
+
+volumes:
+  mysql_data:
