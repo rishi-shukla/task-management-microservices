@@ -10,6 +10,12 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    # NEW: Actively ping MySQL to ensure it is ready to accept connections
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   identity-service:
     build: ./identity-service
@@ -24,7 +30,9 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - mysql
+      mysql:
+        # NEW: Wait for the database healthcheck to pass before starting
+        condition: service_healthy
 
   task-service:
     build: ./task-service
@@ -39,8 +47,10 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - mysql
-      - identity-service
+      mysql:
+        condition: service_healthy
+      identity-service:
+        condition: service_started
 
   gateway-service:
     build: ./gateway-service
@@ -54,14 +64,13 @@ services:
       - identity-service
       - task-service
 
-  # NEW: Containerized Frontend Service
   frontend:
     build: ./frontend
     container_name: task-manager-ui
     ports:
-      - "5173:80" # Maps browser port 5173 to Nginx port 80 inside the container
+      - "5173:80"
     depends_on:
-      - gateway-service # Frontend depends on the Gateway to route requests
+      - gateway-service
     restart: always
 
 volumes:

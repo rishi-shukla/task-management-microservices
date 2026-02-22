@@ -25,7 +25,8 @@ spring:
 
       routes:
         - id: identity-service-route
-          uri: ${IDENTITY_SERVICE_URL:http://localhost:8081}
+          # FIXED: Changed localhost to identity-service
+          uri: ${IDENTITY_SERVICE_URL:http://identity-service:8081}
           predicates:
             - Path=/auth/**
           # Optional: Use a filter to preserve the host header
@@ -33,6 +34,7 @@ spring:
             - PreserveHostHeader
 
         - id: task-service-route
-          uri: ${TASK_SERVICE_URL:http://localhost:8082}
+          # FIXED: Changed localhost to task-service
+          uri: ${TASK_SERVICE_URL:http://task-service:8082}
           predicates:
             - Path=/tasks/**
